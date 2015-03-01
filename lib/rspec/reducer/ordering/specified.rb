@@ -12,7 +12,7 @@ module RSpec
         def order(items)
           items
             .select  { |i| order_contains?(i) }
-            .sort_by { |i| index_of(item)     }
+            .sort_by { |i| index_of(i)        }
         end
 
         private
@@ -32,8 +32,8 @@ end
 
 RSpec.configure do |config|
   order = File.open("order.log").each_line.to_a.map(&:strip)
-  defined_orderer = RSpec::Reducer::Ordering::Specified.new(order)
-  config.register_ordering(:specified) do |items|
-    defined_orderer.order(items)
+  specified = RSpec::Reducer::Ordering::Specified.new(order)
+  config.register_ordering(:global) do |items|
+    specified.order(items)
   end
 end
