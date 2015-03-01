@@ -23,6 +23,14 @@ module RSpec
           self == other
         end
 
+        def path_to(search_name)
+          return [name] if search_name == self.name
+          paths = children.map { |c| c.path_to(search_name) }
+          if path = paths.find { |p| !p.nil?  }
+            [name] + path.flatten
+          end
+        end
+
       end
     end
   end

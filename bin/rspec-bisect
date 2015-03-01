@@ -3,27 +3,64 @@
 $LOAD_PATH << File.expand_path(File.join(__FILE__, "..", "..", "lib"))
 
 require 'yaml'
+require 'optparse'
 require 'rspec/reducer/tree/node'
+require 'pry-byebug'
 
-tree = YAML.load_file("tree.yml")
-nodes   = tree.children
-FAILURE = tree.to_a.flatten.last
+options = {}
+parser = OptionParser.new do |opts|
+  opts.on('--order TYPE[:SEED]', 'Run examples by the specified order type.',
+            '  [defined] examples and groups are run in the order they are defined',
+            '  [rand]    randomize the order of groups and examples',
+            '  [random]  alias for rand',
+            '  [random:SEED] e.g. --order random:123') do |o|
+              options[:order] = o
+  end
 
-def order_for(ns)
-  (ns.map(&:to_a).flatten.reject{|n| n == FAILURE} + [FAILURE])
+  opts.on('--seed SEED', Integer, 'Equivalent of --order rand:SEED.') do |seed|
+    options[:order] = "rand:#{seed}"
+  end
 end
 
-def search_in(nodes)
+original_args = ARGV.join(" ")
+
+filtered_args = []
+while $*.size > 0 do
+  begin
+    parser.parse!
+  rescue OptionParser::InvalidOption => e
+    filtered_args.push(e.to_s.sub(/invalid option:\s+/, ''))
+  end
+end
+puts options
+BISECT_COMMAND = "rspec #{filtered_args.join(" ")} --require rspec/reducer/ordering/specified"
+
+recording_command = "rspec #{original_args} --require rspec/reducer/formatters/recording -f RSpec::Reducer::Formatters::Recording"
+puts recording_command
+system(recording_command)
+
+tree    = YAML.load_file("tree.yml")
+nodes   = tree.children
+FAILURE = tree.to_a.flatten.last
+FAILURE_PATH = tree.path_to(FAILURE).drop(1)
+
+def order_for(ns, prefix)
+  (prefix + ns.map(&:to_a).flatten.reject{|n| n == FAILURE} + FAILURE_PATH)
+end
+
+def search_in(nodes, prefix)
   low     = 0
   high    = nodes.length - 1
   mid     = (low + high) / 2
   while low < high do
     items = nodes[low..mid]
-    File.open("order.log", "w") { |f| f.puts(order_for(items)) }
-    `rspec spec/ --order specified`
+    File.open("order.log", "w") { |f| f.puts(order_for(items, prefix)) }
+    system(BISECT_COMMAND)
     if $?.success?
+      puts "passed"
       low = mid + 1
     else
+      puts "failed"
       high = mid
     end
     mid = (low + high) / 2
@@ -31,10 +68,12 @@ def search_in(nodes)
   nodes[low]
 end
 
+prefix  = []
 node = nil
 loop do
-  node = search_in(nodes)
+  node = search_in(nodes, prefix)
   break if node.children.empty?
+  prefix << node.name
   nodes = node.children
 end
 
