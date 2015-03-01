@@ -6,20 +6,18 @@ require 'yaml'
 require 'rspec/reducer/tree/node'
 
 tree = YAML.load_file("tree.yml")
-
 nodes   = tree.children
-low     = 0
-high    = nodes.length - 1
-mid     = (low + high) / 2
 FAILURE = tree.to_a.flatten.last
 
 def order_for(ns)
   (ns.map(&:to_a).flatten.reject{|n| n == FAILURE} + [FAILURE])
 end
 
-loop do
+def search_in(nodes)
+  low     = 0
+  high    = nodes.length - 1
+  mid     = (low + high) / 2
   while low < high do
-    puts [low, mid, high]
     items = nodes[low..mid]
     File.open("order.log", "w") { |f| f.puts(order_for(items)) }
     `rspec spec/ --order specified`
@@ -30,14 +28,14 @@ loop do
     end
     mid = (low + high) / 2
   end
-  if nodes[low].children.empty?
-    break
-  else
-    nodes = nodes[low].children
-    low = 0
-    high = nodes.length - 1
-    mid = (low + high) / 2
-  end
+  nodes[low]
 end
 
-puts nodes[low].name
+node = nil
+loop do
+  node = search_in(nodes)
+  break if node.children.empty?
+  nodes = node.children
+end
+
+puts node.name
