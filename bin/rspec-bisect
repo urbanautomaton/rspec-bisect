@@ -5,7 +5,7 @@ $LOAD_PATH << File.expand_path(File.join(__FILE__, "..", "..", "lib"))
 require 'yaml'
 require 'optparse'
 require 'open3'
-require 'rspec/reducer/tree/node'
+require 'rspec-bisect'
 
 options = {}
 parser = OptionParser.new do |opts|
@@ -32,9 +32,9 @@ while $*.size > 0 do
     filtered_args.push(e.to_s.sub(/invalid option:\s+/, ''))
   end
 end
-BISECT_COMMAND = "rspec #{filtered_args.join(" ")} --require rspec/reducer/ordering/specified"
+BISECT_COMMAND = "rspec #{filtered_args.join(" ")} --require rspec-bisect/ordering/specified"
 
-recording_command = "rspec #{original_args} --require rspec/reducer/formatters/recording -f RSpec::Reducer::Formatters::Recording"
+recording_command = "rspec #{original_args} --require rspec-bisect/formatters/recording -f RSpecBisect::Formatters::Recording"
 puts "Recording failing example order"
 Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
   if wait_thr.value.success?

@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'rspec/reducer/version'
+require 'rspec-bisect/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "rspec-reducer"
-  spec.version       = RSpec::Reducer::VERSION
+  spec.name          = "rspec-bisect"
+  spec.version       = RSpecBisect::VERSION
   spec.authors       = ["Simon Coffey"]
   spec.email         = ["simon@urbanautomaton.com"]
   spec.summary       = %q{Reduce order-dependent RSpec test failures}

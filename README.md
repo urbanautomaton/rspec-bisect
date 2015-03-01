@@ -1,4 +1,4 @@
-# Rspec::Reducer
+# RSpec Bisect
 
 A tool for reducing order-dependent test failures to a minimal set of
 failing examples.
@@ -25,7 +25,7 @@ This gem automates the reduction of an order-dependent test failure by:
 
 Add this line to your application's Gemfile:
 
-    gem 'rspec-reducer'
+    gem 'rspec-bisect'
 
 And then execute:
 
@@ -33,13 +33,13 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install rspec-reducer
+    $ gem install rspec-bisect
 
 ## Usage
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/rspec-reducer/fork )
+1. Fork it ( https://github.com/urbanautomaton/rspec-bisect/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
