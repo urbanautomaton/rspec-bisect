@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path(File.join(__FILE__, "..", "..", "lib"))
+
+require 'yaml'
+require 'rspec/reducer/tree/node'
+
+tree = YAML.load_file("tree.yml")
+
+nodes   = tree.children
+low     = 0
+high    = nodes.length - 1
+mid     = (low + high) / 2
+FAILURE = tree.to_a.flatten.last
+
+def order_for(ns)
+  (ns.map(&:to_a).flatten.reject{|n| n == FAILURE} + [FAILURE])
+end
+
+loop do
+  while low < high do
+    puts [low, mid, high]
+    items = nodes[low..mid]
+    File.open("order.log", "w") { |f| f.puts(order_for(items)) }
+    `rspec spec/ --order specified`
+    if $?.success?
+      low = mid + 1
+    else
+      high = mid
+    end
+    mid = (low + high) / 2
+  end
+  if nodes[low].children.empty?
+    break
+  else
+    nodes = nodes[low].children
+    low = 0
+    high = nodes.length - 1
+    mid = (low + high) / 2
+  end
+end
+
+puts nodes[low].name
