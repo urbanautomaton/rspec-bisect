@@ -61,18 +61,18 @@ Randomized with seed 37454
 
 Failures:
 
-  1) a second group in a file dislikes fish
-     Failure/Error: expect(defined?(::FISH)).to be_falsey
-       expected: falsey value
-            got: "constant"
-     # ./fail_specs/other_spec.rb:11:in `block (2 levels) in <top (required)>'
+  1) expects a global value to be 3
+     Failure/Error: expect(ENV['GLOBAL_VALUE']).to eq 3
+       expected: 3
+            got: "argh, mutable global state"
+     # ./spec/other_spec.rb:11:in `block (2 levels) in <top (required)>'
 
 Finished in 0.0023 seconds (files took 0.09313 seconds to load)
 6 examples, 1 failure
 
 Failed examples:
 
-rspec ./fail_specs/other_spec.rb:10 # a second group in a file dislikes fish
+rspec ./spec/other_spec.rb:10 # expects a global value to be 3
 
 Randomized with seed 37454
 ```
@@ -85,7 +85,7 @@ Recording failing example order
 Searching 5 examples
 Searching 2 examples
 
-The culprit appears to be at ./fail_specs/other_spec.rb:4
+The culprit appears to be at ./spec/other_spec.rb:4
 ```
 
 ## Contributing
