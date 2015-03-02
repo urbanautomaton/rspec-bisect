@@ -23,64 +23,69 @@ parser = OptionParser.new do |opts|
 end
 
 original_args = ARGV.join(" ")
-
 filtered_args = []
-while $*.size > 0 do
+
+while ARGV.size > 0 do
   begin
     parser.parse!
   rescue OptionParser::InvalidOption => e
     filtered_args.push(e.to_s.sub(/invalid option:\s+/, ''))
   end
 end
-BISECT_COMMAND = "rspec #{filtered_args.join(" ")} --require rspec-bisect/ordering/specified"
 
-recording_command = "rspec #{original_args} --require rspec-bisect/formatters/recording -f RSpecBisect::Formatters::Recording"
-puts "Recording failing example order"
-Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
-  if wait_thr.value.success?
-    $stderr.puts "Errr... this passed"
-    $stderr.write stdout_and_stderr.read
-  end
+def order_for(tree, examples)
+  tree.filter(examples).to_a.flatten.drop(1)
 end
 
-tree    = YAML.load_file("tree.yml")
-nodes   = tree.children
-FAILURE = tree.to_a.flatten.last
-FAILURE_PATH = tree.path_to(FAILURE).drop(1)
-
-def order_for(ns, prefix)
-  (prefix + ns.map(&:to_a).flatten.reject{|n| n == FAILURE} + FAILURE_PATH)
-end
-
-def search_in(nodes, prefix)
-  low     = 0
-  high    = nodes.length - 1
-  mid     = (low + high) / 2
+def bisect(candidates)
+  low  = 0
+  high = candidates.length - 1
   while low < high do
-    items = nodes[low..mid]
-    File.open("order.log", "w") { |f| f.puts(order_for(items, prefix)) }
-    puts "Running ~#{order_for(items, prefix).count} specs"
-    Open3.popen3(BISECT_COMMAND) do |_stdin, _stdout, _stderr, wait_thr|
-      if wait_thr.value.success?
-        low = mid + 1
-      else
-        high = mid
-      end
-      mid = (low + high) / 2
+    puts "Searching #{candidates[low..high].count} examples"
+    mid = (low + high) / 2
+    if yield(candidates[low..mid])
+      low = mid + 1
+    else
+      high = mid
     end
   end
-  nodes[low]
+  candidates[low]
 end
 
-puts "Reducing example set"
-prefix  = []
-node = nil
-loop do
-  node = search_in(nodes, prefix)
-  break if node.children.empty?
-  prefix << node.name
-  nodes = node.children
+bisect_command = "rspec #{filtered_args.join(" ")} \
+                  --require rspec-bisect/ordering/specified"
+recording_command = "rspec #{original_args} \
+                     --require rspec-bisect/formatters/recording \
+                     --format RSpecBisect::Formatters::Recording"
+
+puts "Recording failing example order"
+Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
+  out = stdout_and_stderr.read
+  if wait_thr.value.success?
+    $stderr.puts "Errr... this passed:"
+    $stderr.write out
+    exit(1)
+  elsif !(out =~ /Finished.*seconds/)
+    $stderr.puts "Recording seems to have failed:"
+    $stderr.write out
+    exit(1)
+  end
+end
+
+tree     = YAML.load_file("tree.yml")
+examples = tree.leaves
+failure  = examples.pop
+
+culprit = bisect(examples) do |candidates|
+  items = candidates + [failure]
+  order = order_for(tree, items)
+  File.open("order.log", "w") { |f| f.puts(order) }
+  result = false
+  Open3.popen3(bisect_command) do |_i, _o, _e, wait_thr|
+    result = wait_thr.value.success?
+  end
+  result
 end
 
 puts
-puts "The culprit appears to be at #{node.name}"
+puts "The culprit appears to be at #{culprit}"

@@ -7,22 +7,30 @@ module RSpecBisect
       attr_accessor :tree
 
       def initialize(root_name: ".")
-        @tree = @current_node = Node.new(root_name, nil)
+        @tree = @current_node = Node.new(root_name)
+        @path = [@tree]
       end
 
       def enter(name)
-        node = Node.new(name, @current_node)
-        @current_node.children << node
-        @current_node = node
+        node = Node.new(name)
+        current_node.children << node
+        @path.push(node)
       end
 
       def exit
-        if @current_node.parent.nil?
+        if current_node == @tree
           raise(ExitRootError, "Attempted to exit the root node")
         end
 
-        @current_node = @current_node.parent
+        @path.pop
       end
+
+      private
+
+      def current_node
+        @path.last
+      end
+
     end
   end
 end

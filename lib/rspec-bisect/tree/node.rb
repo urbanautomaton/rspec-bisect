@@ -3,10 +3,10 @@ require 'rspec-bisect/tree/errors'
 module RSpecBisect
   module Tree
     class Node
-      attr_accessor :name, :parent, :children
+      attr_accessor :name, :children
 
-      def initialize(name, parent)
-        @name, @parent = name, parent
+      def initialize(name)
+        @name = name
         @children = []
       end
 
@@ -27,6 +27,27 @@ module RSpecBisect
         paths = children.map { |c| c.path_to(search_name) }
         if path = paths.find { |p| !p.nil?  }
           [name] + path.flatten
+        end
+      end
+
+      def leaves
+        if children.empty?
+          [self.name]
+        else
+          children.flat_map(&:leaves)
+        end
+      end
+
+      def filter(leaves)
+        if children.empty? && leaves.include?(name)
+          dup
+        else
+          filtered_children = children.map { |c| c.filter(leaves) }.compact
+          if filtered_children.length > 0
+            dup.tap do |copy|
+              copy.children = filtered_children
+            end
+          end
         end
       end
 
