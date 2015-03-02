@@ -3,34 +3,20 @@
 $LOAD_PATH << File.expand_path(File.join(__FILE__, "..", "..", "lib"))
 
 require 'yaml'
-require 'optparse'
 require 'open3'
 require 'rspec-bisect'
 
-options = {}
-parser = OptionParser.new do |opts|
-  opts.on('--order TYPE[:SEED]', 'Run examples by the specified order type.',
-            '  [defined] examples and groups are run in the order they are defined',
-            '  [rand]    randomize the order of groups and examples',
-            '  [random]  alias for rand',
-            '  [random:SEED] e.g. --order random:123') do |o|
-              options[:order] = o
-  end
+original_args = ARGV.join(" ")
+options, filtered_args = RSpecBisect::OptionParser.parse_with_residual!(ARGV)
 
-  opts.on('--seed SEED', Integer, 'Equivalent of --order rand:SEED.') do |seed|
-    options[:order] = "rand:#{seed}"
-  end
+unless options.has_key?(:order)
+  $stderr.puts "You haven't specified an order for the spec run."
+  $stderr.puts "Without one, this tool is unable to reproduce order-dependent failures."
+  exit(1)
 end
 
-original_args = ARGV.join(" ")
-filtered_args = []
-
-while ARGV.size > 0 do
-  begin
-    parser.parse!
-  rescue OptionParser::InvalidOption => e
-    filtered_args.push(e.to_s.sub(/invalid option:\s+/, ''))
-  end
+def bundle_prefix(options)
+  options[:bundler] ? 'bundle exec' : ''
 end
 
 def order_for(tree, examples)
@@ -52,13 +38,14 @@ def bisect(candidates)
   candidates[low]
 end
 
-bisect_command = "rspec #{filtered_args.join(" ")} \
-                  --require rspec-bisect/ordering/specified"
-recording_command = "rspec #{original_args} \
+bisect_command = "#{bundle_prefix(options)} rspec #{filtered_args.join(" ")} \
+                  --require rspec-bisect/ordering/specified".squeeze(" ")
+recording_command = "#{bundle_prefix(options)} rspec #{original_args} \
                      --require rspec-bisect/formatters/recording \
-                     --format RSpecBisect::Formatters::Recording"
+                     --format RSpecBisect::Formatters::Recording".squeeze(" ")
 
 puts "Recording failing example order"
+puts recording_command
 Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
   out = stdout_and_stderr.read
   if wait_thr.value.success?
