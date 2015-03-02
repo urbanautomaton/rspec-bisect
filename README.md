@@ -18,8 +18,22 @@ This gem automates the reduction of an order-dependent test failure by:
 
 1. Recording the order of example groups in the failed test
 2. Replaying the test in this recorded order
-3. Bisecting the failing set and recursing or backtracking until a
-   minimal failing set of examples is found.
+3. Applying binary search to the failing example set until a single
+   responsible example is found.
+
+## Caveats
+
+The tool assumes that there is a single culpable example, and will
+proceed in reducing the example set until one is found. If multiple
+dependent examples combine to cause the failure, a) that's really bad
+luck for you, and b) this probably won't find them.
+
+If there are multiple examples that *independently* cause the failure,
+this will identify them one at a time.
+
+Finally, this is very 0.0.1 - while bits of the core logic are tested,
+other bits aren't and are in flux. Also the output is, to put it mildly,
+rubbish.
 
 ## Installation
 
