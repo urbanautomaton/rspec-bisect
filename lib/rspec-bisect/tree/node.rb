@@ -5,6 +5,25 @@ module RSpecBisect
     class Node
       attr_accessor :name, :children
 
+      def self.from_a(ary)
+        unless ary.is_a?(Enumerable)
+          raise InvalidTreeError, "Input is not an Enumerable"
+        end
+        unless ary.length == 2
+          raise InvalidTreeError, "Array must have exactly two elements"
+        end
+        unless ary.last.is_a?(Enumerable)
+          raise InvalidTreeError, "Child element must be an Enumerable"
+        end
+
+        name, children_ary = ary
+
+        new(name).tap do |node|
+          children = children_ary.map{|c| from_a(c)}
+          node.children = children
+        end
+      end
+
       def initialize(name)
         @name = name
         @children = []
