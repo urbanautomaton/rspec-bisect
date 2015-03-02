@@ -37,8 +37,8 @@ module RSpecBisect
     private
 
     def record_failing_run!
-      puts "Recording failing example order"
-      puts recording_command
+      out.puts "Recording failing example order"
+      out.puts recording_command
       Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
         out = stdout_and_stderr.read
         if wait_thr.value.success?
@@ -69,8 +69,8 @@ module RSpecBisect
         result
       end
 
-      puts
-      puts "The culprit appears to be at #{culprit}"
+      out.puts
+      out.puts "The culprit appears to be at #{culprit}"
     end
 
     def order_for(tree, examples)
@@ -85,7 +85,7 @@ module RSpecBisect
       low  = 0
       high = candidates.length - 1
       while low < high do
-        puts "Searching #{candidates[low..high].count} examples"
+        out.puts "Searching #{candidates[low..high].count} examples"
         mid = (low + high) / 2
         if yield(candidates[low..mid])
           low = mid + 1
