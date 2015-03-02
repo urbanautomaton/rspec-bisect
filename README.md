@@ -37,6 +37,43 @@ Or install it yourself as:
 
 ## Usage
 
+First, identify an order-dependent failing rspec run, e.g.
+
+```
+$ bundle exec rspec spec/ --fail-fast --seed 37454
+
+Randomized with seed 37454
+.....F
+
+Failures:
+
+  1) a second group in a file dislikes fish
+     Failure/Error: expect(defined?(::FISH)).to be_falsey
+       expected: falsey value
+            got: "constant"
+     # ./fail_specs/other_spec.rb:11:in `block (2 levels) in <top (required)>'
+
+Finished in 0.0023 seconds (files took 0.09313 seconds to load)
+6 examples, 1 failure
+
+Failed examples:
+
+rspec ./fail_specs/other_spec.rb:10 # a second group in a file dislikes fish
+
+Randomized with seed 37454
+```
+
+Then, simply replace the `rspec` command with `rspec-bisect`:
+
+```
+$ bundle exec rspec-bisect spec/ --fail-fast --seed 37454
+Recording failing example order
+Searching 5 examples
+Searching 2 examples
+
+The culprit appears to be at ./fail_specs/other_spec.rb:4
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/urbanautomaton/rspec-bisect/fork )
