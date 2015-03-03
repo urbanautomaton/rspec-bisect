@@ -18,15 +18,12 @@ module RSpecBisect
 
         name, children_ary = ary
 
-        new(name).tap do |node|
-          children = children_ary.map{|c| from_a(c)}
-          node.children = children
-        end
+        new(name, children_ary.map { |c| from_a(c) })
       end
 
-      def initialize(name)
-        @name = name
-        @children = []
+      def initialize(name, children = [])
+        @name     = name
+        @children = children
       end
 
       def to_a
@@ -41,31 +38,25 @@ module RSpecBisect
         self == other
       end
 
-      def path_to(search_name)
-        return [name] if search_name == self.name
-        paths = children.map { |c| c.path_to(search_name) }
-        if path = paths.find { |p| !p.nil?  }
-          [name] + path.flatten
-        end
+      def leaf?
+        children.empty?
       end
 
       def leaves
-        if children.empty?
+        if leaf?
           [self.name]
         else
           children.flat_map(&:leaves)
         end
       end
 
-      def filter(leaves)
-        if children.empty? && leaves.include?(name)
-          dup
+      def filter(only_leaves)
+        if leaf? && only_leaves.include?(name)
+          self.class.new(name)
         else
-          filtered_children = children.map { |c| c.filter(leaves) }.compact
+          filtered_children = children.map { |c| c.filter(only_leaves) }.compact
           if filtered_children.length > 0
-            dup.tap do |copy|
-              copy.children = filtered_children
-            end
+            self.class.new(name, filtered_children)
           end
         end
       end

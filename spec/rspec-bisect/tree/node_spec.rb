@@ -2,13 +2,17 @@ require 'spec_helper'
 require 'rspec-bisect/tree/node'
 
 RSpec.describe RSpecBisect::Tree::Node do
-  subject { described_class.new("a", nil) }
+  subject { described_class.new("a") }
+
+  def from_a(ary)
+    RSpecBisect::Tree::Node.from_a(ary)
+  end
 
   describe ".from_a" do
     it "takes the name from the first element" do
       input = ["a", []]
 
-      expect(RSpecBisect::Tree::Node.from_a(input)).to eq(
+      expect(from_a(input)).to eq(
         RSpecBisect::Tree::Node.new("a")
       )
     end
@@ -16,7 +20,7 @@ RSpec.describe RSpecBisect::Tree::Node do
     it "takes the children from the second element" do
       input = ["a", [["b", []]]]
 
-      tree = RSpecBisect::Tree::Node.from_a(input)
+      tree = from_a(input)
 
       expect(tree.children).to eq(
         [RSpecBisect::Tree::Node.new("b")]
@@ -25,7 +29,7 @@ RSpec.describe RSpecBisect::Tree::Node do
 
     it "raises an ArgumentError if the input is not an Enumerable" do
       expect {
-        RSpecBisect::Tree::Node.from_a("wat")
+        from_a("wat")
       }.to raise_error RSpecBisect::Tree::InvalidTreeError
     end
 
@@ -33,7 +37,7 @@ RSpec.describe RSpecBisect::Tree::Node do
       input = ["a", [], []]
 
       expect {
-        RSpecBisect::Tree::Node.from_a(input)
+        from_a(input)
       }.to raise_error RSpecBisect::Tree::InvalidTreeError
     end
 
@@ -41,7 +45,7 @@ RSpec.describe RSpecBisect::Tree::Node do
       input = ["a", "b"]
 
       expect {
-        RSpecBisect::Tree::Node.from_a(input)
+        from_a(input)
       }.to raise_error RSpecBisect::Tree::InvalidTreeError
     end
 
@@ -49,29 +53,29 @@ RSpec.describe RSpecBisect::Tree::Node do
       input = ["a", ["b"]]
 
       expect {
-        RSpecBisect::Tree::Node.from_a(input)
+        from_a(input)
       }.to raise_error RSpecBisect::Tree::InvalidTreeError
     end
   end
 
   describe "#==" do
     it "is equal if the name and children are equal" do
-      one = RSpecBisect::Tree::Node.from_a(["a", [["b", []], ["c", []]]])
-      two = RSpecBisect::Tree::Node.from_a(["a", [["b", []], ["c", []]]])
+      one = from_a(["a", [["b", []], ["c", []]]])
+      two = from_a(["a", [["b", []], ["c", []]]])
 
       expect(one).to eq two
     end
 
     it "is not equal if the name differs" do
-      one = RSpecBisect::Tree::Node.from_a(["a", [["b", []]]])
-      two = RSpecBisect::Tree::Node.from_a(["z", [["b", []]]])
+      one = from_a(["a", [["b", []]]])
+      two = from_a(["z", [["b", []]]])
 
       expect(one).to_not eq two
     end
 
     it "is not equal if the children differ" do
-      one = RSpecBisect::Tree::Node.from_a(["a", [["b", []]]])
-      two = RSpecBisect::Tree::Node.from_a(["a", [["p", []]]])
+      one = from_a(["a", [["b", []]]])
+      two = from_a(["a", [["p", []]]])
 
       expect(one).to_not eq two
     end
@@ -79,7 +83,7 @@ RSpec.describe RSpecBisect::Tree::Node do
 
   describe "#leaves" do
     it "returns just the ordered leaf nodes" do
-      tree = RSpecBisect::Tree::Node.from_a(
+      tree = from_a(
         [
           "a",
           [
@@ -95,7 +99,7 @@ RSpec.describe RSpecBisect::Tree::Node do
 
   describe "#filter_leaves" do
     it "returns the subset of the tree leading to the leaves" do
-      tree = RSpecBisect::Tree::Node.from_a(
+      tree = from_a(
         [
           "a",
           [
@@ -106,7 +110,7 @@ RSpec.describe RSpecBisect::Tree::Node do
         ]
       )
 
-      expected = RSpecBisect::Tree::Node.from_a(
+      expected = from_a(
         ["a", [["c", [["d", []]]], ["e", []]]]
       )
 
