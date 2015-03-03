@@ -116,6 +116,14 @@ module RSpecBisect
     def bisect(candidates)
       low  = 0
       high = candidates.length - 1
+      out.write progress(candidates, low, high)
+      if yield(candidates[low..high])
+        out.puts " \u2714"
+        puts "The same run that was just recorded, failed. Wat."
+        exit(1)
+      else
+        out.puts " \u2718"
+      end
       while low < high do
         mid = (low + high) / 2
         out.write progress(candidates, low, mid)
