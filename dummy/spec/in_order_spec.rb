@@ -1,22 +1,20 @@
-RSpec.describe "examples only pass when they are run in order" do
+RSpec.describe "a group containing a naughty example" do
   before(:context) { @list = [] }
 
-  it "passes when run second" do
-    @list << 2
-    # expect(@list).to eq([1, 2])
+  it "is innocent" do
+    expect(true).to be_truthy
   end
 
-  it "sets a fish" do
-    ::FISH = :chub
+  it "unleashes the Spanish Inquisition!" do
+    ENV['GLOBAL_MUTABLE_STATE'] = "The Spanish Inquisition"
   end
 
-  it "passes when run third" do
-    @list << 3
-    # expect(@list).to eq([1, 2, 3])
+  it "is also innocent" do
+    expect(true).to be_truthy
   end
 
-  describe "another group" do
-    it "passes all the time" do
+  describe "a nested group" do
+    it "never hurt no-one, guv" do
       expect(true).to be_truthy
     end
   end
