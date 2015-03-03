@@ -123,6 +123,7 @@ module RSpecBisect
           out.puts " \u2714"
           out.write progress(candidates, mid+1, high)
           if yield(candidates[(mid+1)..high])
+            out.puts " \u2714"
             puts "Uh... this bisection passed on both sides :-("
             exit(1)
           else
