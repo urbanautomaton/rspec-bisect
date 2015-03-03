@@ -1,32 +1,33 @@
 require 'yaml'
 require 'open3'
-require 'rspec-bisect/option_parser'
 
 module RSpecBisect
   class Runner
 
-    def self.run!(args, err=$stderr, out=$stdout)
-      original_args          = args.dup
-      options, bisect_args = OptionParser.parse_with_residual!(args)
+    def self.run!(args, err = $stderr, out = $stdout)
+      options          = {}
+      options[:bundle] = extract_bundle_option!(args)
+      rspec_args       = args
+      bisect_args      = filter_order_options(args)
 
-      unless options.has_key?(:order)
+      if rspec_args.grep(/seed|order/).empty?
         err.puts "You haven't specified an order for the spec run."
         err.puts "Without one, this tool is unable to reproduce order-dependent failures."
         exit(1)
       end
 
-      runner = new(err, out, original_args, bisect_args, options)
+      runner = new(err, out, rspec_args, bisect_args, options)
       status = runner.run.to_i
       exit(status) if status != 0
     end
 
-    attr_reader :err, :out, :original_args, :bisect_args, :options
+    attr_reader :err, :out, :rspec_args, :bisect_args, :options
 
-    def initialize(err, out, original_args, bisect_args, options)
-      @err, @out     = err, out
-      @original_args = original_args
-      @bisect_args   = bisect_args
-      @options       = options
+    def initialize(err, out, rspec_args, bisect_args, options)
+      @err, @out   = err, out
+      @rspec_args  = rspec_args
+      @bisect_args = bisect_args
+      @options     = options
     end
 
     def run
@@ -36,9 +37,32 @@ module RSpecBisect
 
     private
 
+    def self.filter_order_options(args)
+      args.dup.tap do |filtered|
+        if i = filtered.find_index("--order")
+          # Remove the order flag and its argument
+          filtered.delete_at(i)
+          filtered.delete_at(i)
+        end
+        if i = filtered.find_index("--seed")
+          filtered.delete_at(i)
+          filtered.delete_at(i)
+        end
+      end
+    end
+
+    def self.extract_bundle_option!(args)
+      if args.delete("--no-bundle")
+        false
+      elsif args.delete("--bundle")
+        true
+      else
+        true
+      end
+    end
+
     def record_failing_run!
       out.puts "Recording failing example order"
-      out.puts recording_command
       Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
         out = stdout_and_stderr.read
         if wait_thr.value.success?
@@ -63,7 +87,7 @@ module RSpecBisect
         order = order_for(tree, items)
         File.open("order.log", "w") { |f| f.puts(order) }
         result = false
-        Open3.popen3(bisect_command) do |_i, _o, _e, wait_thr|
+        Open3.popen2e(bisect_command) do |_i, stdout_and_stderr, wait_thr|
           result = wait_thr.value.success?
         end
         result
@@ -78,14 +102,14 @@ module RSpecBisect
     end
 
     def bundle_prefix
-      "bundle exec" if options[:bundler]
+      "bundle exec" if options[:bundle]
     end
 
     def bisect(candidates)
       low  = 0
       high = candidates.length - 1
       while low < high do
-        out.puts "Searching #{candidates[low..high].count} examples"
+        out.puts progress(candidates, low, high)
         mid = (low + high) / 2
         if yield(candidates[low..mid])
           low = mid + 1
@@ -93,7 +117,15 @@ module RSpecBisect
           high = mid
         end
       end
+      out.puts progress(candidates, low, high)
       candidates[low]
+    end
+
+    def progress(candidates, low, high)
+      prog = (0..(candidates.length - 1)).map do |i|
+        (i >= low && i <= high) ? "X" : "."
+      end
+      "[#{prog.join}]"
     end
 
     def command(parts)
@@ -111,7 +143,7 @@ module RSpecBisect
     def recording_command
       command([
         bundle_prefix,
-        "rspec #{original_args.join(" ")}",
+        "rspec #{rspec_args.join(" ")}",
         "--require rspec-bisect/formatters/recording",
         "--format RSpecBisect::Formatters::Recording"
       ])
