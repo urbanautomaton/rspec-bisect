@@ -1,6 +1,6 @@
-RSpec.describe "a group containing a naughty example" do
-  before(:context) { @list = [] }
+require 'spec_helper'
 
+RSpec.describe "a group containing a naughty example" do
   it "is innocent" do
     expect(true).to be_truthy
   end

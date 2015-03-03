@@ -144,10 +144,6 @@ module RSpecBisect
       "[#{prog.join}]"
     end
 
-    def command(parts)
-      parts.compact.join(" ")
-    end
-
     def bisect_command
       [
         bundle_prefix,

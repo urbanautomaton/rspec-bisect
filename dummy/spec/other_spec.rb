@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 RSpec.describe "some other group" do
   it "is not very interesting" do
     expect(true).to be_truthy
