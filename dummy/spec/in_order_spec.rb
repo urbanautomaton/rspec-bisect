@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 RSpec.describe "examples only pass when they are run in order" do
   before(:context) { @list = [] }
 

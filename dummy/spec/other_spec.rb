@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 RSpec.describe "some other group" do
   it "does a thing" do
     expect(false).to be_falsey
