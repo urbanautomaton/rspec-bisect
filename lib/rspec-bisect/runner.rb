@@ -46,6 +46,7 @@ module RSpecBisect
           filtered.delete_at(i)
         end
         if i = filtered.find_index("--seed")
+          # Ditto with the seed flag
           filtered.delete_at(i)
           filtered.delete_at(i)
         end
@@ -148,20 +149,20 @@ module RSpecBisect
     end
 
     def bisect_command
-      command([
+      [
         bundle_prefix,
         "rspec #{bisect_args.join(" ")}",
         "--require rspec-bisect/ordering/specified"
-      ])
+      ].compact.join(" ")
     end
 
     def recording_command
-      command([
+      [
         bundle_prefix,
         "rspec #{rspec_args.join(" ")}",
         "--require rspec-bisect/formatters/recording",
         "--format RSpecBisect::Formatters::Recording"
-      ])
+      ].compact.join(" ")
     end
 
   end
