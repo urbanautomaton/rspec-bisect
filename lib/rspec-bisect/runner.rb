@@ -90,6 +90,12 @@ module RSpecBisect
         result = false
         Open3.popen2e(bisect_command) do |_i, stdout_and_stderr, wait_thr|
           result = wait_thr.value.success?
+          out = stdout_and_stderr.read
+          if !(out =~ /Finished.*seconds/)
+            err.puts "Recording seems to have failed:"
+            err.write out
+            exit(1)
+          end
         end
         result
       end
