@@ -82,6 +82,7 @@ module RSpecBisect
       examples = tree.leaves
       failure  = examples.pop
 
+      out.puts "Searching within #{examples.count} candidates..."
       culprit = bisect(examples) do |candidates|
         items = candidates + [failure]
         order = order_for(tree, items)
@@ -109,13 +110,16 @@ module RSpecBisect
       low  = 0
       high = candidates.length - 1
       while low < high do
-        out.puts progress(candidates, low, high)
+        t0 = Time.now
+        out.write progress(candidates, low, high)
         mid = (low + high) / 2
         if yield(candidates[low..mid])
           low = mid + 1
         else
           high = mid
         end
+        out.write " #{Time.now - t0}"
+        out.write "\n"
       end
       out.puts progress(candidates, low, high)
       candidates[low]
