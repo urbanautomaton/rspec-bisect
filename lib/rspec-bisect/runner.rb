@@ -116,18 +116,24 @@ module RSpecBisect
       low  = 0
       high = candidates.length - 1
       while low < high do
-        t0 = Time.now
-        out.write progress(candidates, low, high)
         mid = (low + high) / 2
+        out.write progress(candidates, low, mid)
         if yield(candidates[low..mid])
+          out.puts " \u2714"
+          out.write progress(candidates, mid+1, high)
+          if yield(candidates[(mid+1)..high])
+            out.write progress(candidates, low, mid)
+            puts "Uh... this bisection passed on both sides :-("
+            exit(1)
+          else
+            out.puts " \u2718"
+          end
           low = mid + 1
         else
+          out.puts " \u2718"
           high = mid
         end
-        out.write " #{Time.now - t0}"
-        out.write "\n"
       end
-      out.puts progress(candidates, low, high)
       candidates[low]
     end
 
