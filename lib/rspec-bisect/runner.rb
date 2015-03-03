@@ -123,7 +123,7 @@ module RSpecBisect
 
     def progress(candidates, low, high)
       prog = (0..(candidates.length - 1)).map do |i|
-        (i >= low && i <= high) ? "X" : "."
+        (i >= low && i <= high) ? "█" : "_"
       end
       "[#{prog.join}]"
     end
