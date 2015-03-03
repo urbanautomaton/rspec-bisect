@@ -1,5 +1,6 @@
 require 'yaml'
 require 'open3'
+require 'rspec-bisect/command'
 
 module RSpecBisect
   class Runner
@@ -63,17 +64,11 @@ module RSpecBisect
 
     def record_failing_run!
       out.puts "Recording failing example order"
-      Open3.popen2e(recording_command) do |stdin, stdout_and_stderr, wait_thr|
-        out = stdout_and_stderr.read
-        if wait_thr.value.success?
-          err.puts "Errr... this passed:"
-          err.write out
-          exit(1)
-        elsif !(out =~ /Finished.*seconds/)
-          err.puts "Recording seems to have failed:"
-          err.write out
-          exit(1)
-        end
+      result = run_command(recording_command)
+      if result.pass?
+        command_failed!("Errr... this passed:", out)
+      elsif result.crashed?
+        command_failed!("Recording seems to have failed:", out)
       end
     end
 
@@ -87,21 +82,26 @@ module RSpecBisect
         items = candidates + [failure]
         order = order_for(tree, items)
         File.open("order.log", "w") { |f| f.puts(order) }
-        result = false
-        Open3.popen2e(bisect_command) do |_i, stdout_and_stderr, wait_thr|
-          result = wait_thr.value.success?
-          out = stdout_and_stderr.read
-          if !(out =~ /Finished.*seconds/)
-            err.puts "Recording seems to have failed:"
-            err.write out
-            exit(1)
-          end
+        result = run_command(bisect_command)
+
+        if result.crashed?
+          command_failed!("Recording seems to have failed:", out)
         end
-        result
+        result.pass?
       end
 
       out.puts
       out.puts "The culprit appears to be at #{culprit}"
+    end
+
+    def command_failed!(message, output)
+      err.puts message
+      err.write output
+      exit(1)
+    end
+
+    def run_command(cmd)
+      RSpecBisect::Command.new(cmd)
     end
 
     def order_for(tree, examples)
@@ -122,7 +122,6 @@ module RSpecBisect
           out.puts " \u2714"
           out.write progress(candidates, mid+1, high)
           if yield(candidates[(mid+1)..high])
-            out.write progress(candidates, low, mid)
             puts "Uh... this bisection passed on both sides :-("
             exit(1)
           else
