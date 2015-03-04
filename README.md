@@ -51,41 +51,51 @@ Or install it yourself as:
 
 ## Usage
 
-First, identify an order-dependent failing rspec run, e.g.
+First, identify an order-dependent failing rspec run. For example, if
+you clone this repo and bundle install, the following will fail:
 
 ```
-$ bundle exec rspec spec/ --fail-fast --seed 37454
+$ bundle exec rspec dummy/spec --fail-fast --seed 1234
 
-Randomized with seed 37454
-.....F
+Randomized with seed 1234
+.............F
 
 Failures:
 
-  1) expects a global value to be 3
-     Failure/Error: expect(ENV['GLOBAL_VALUE']).to eq 3
-       expected: 3
-            got: "argh, mutable global state"
-     # ./spec/other_spec.rb:11:in `block (2 levels) in <top (required)>'
+  1) a second group in a file does not expect the Spanish Inquisition
+     Failure/Error: expect(ENV.fetch("GLOBAL_MUTABLE_STATE", 3)).to eq 3
 
-Finished in 0.0023 seconds (files took 0.09313 seconds to load)
-6 examples, 1 failure
+       expected: 3
+            got: "The Spanish Inquisition"
+
+       (compared using ==)
+     # ./dummy/spec/other_spec.rb:11:in `block (2 levels) in <top (required)>'
+
+Finished in 0.00351 seconds (files took 0.10925 seconds to load)
+14 examples, 1 failure
 
 Failed examples:
 
-rspec ./spec/other_spec.rb:10 # expects a global value to be 3
+rspec ./dummy/spec/other_spec.rb:10 # a second group in a file does not expect the Spanish Inquisition
 
-Randomized with seed 37454
+Randomized with seed 1234
 ```
 
 Then, simply replace the `rspec` command with `rspec-bisect`:
 
 ```
-$ bundle exec rspec-bisect spec/ --fail-fast --seed 37454
+$ bundle exec rspec-bisect dummy/spec --fail-fast --seed 1234
 Recording failing example order
-Searching 5 examples
-Searching 2 examples
+Searching within 13 candidates...
+[█████████████] ✘
+[███████______] ✔
+[_______██████] ✘
+[_______███___] ✘
+[_______██____] ✘
+[_______█_____] ✔
+[________█____] ✘
 
-The culprit appears to be at ./spec/other_spec.rb:4
+The culprit appears to be at ./dummy/spec/in_order_spec.rb:24
 ```
 
 ## Contributing
